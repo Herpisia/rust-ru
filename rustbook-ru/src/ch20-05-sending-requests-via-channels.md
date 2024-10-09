@@ -1,30 +1,28 @@
-## Отправка запросов потокам с помощью каналов
+## Отправка запросов потокам с помощью потоков
 
-Проблема, которая у нас имеется в текущей реализации следующая - наше замыкание
+Неполадка, которая у нас имеется в текущей выполнения следующая - наше замыкание
 не делает полезной работы.
 
 We’ve been working around the problem that we get the actual closure we want to
 execute in the `execute` method, but it feels like we need to know the actual
 closures when we create the `ThreadPool`.
 
-Итак, мы хотим чтобы экземпляр `Worker` создавал бы задачи, который `ThreadPool`
+Итак, мы хотим чтобы образец данных `Worker` создавал бы задачи, который `ThreadPool`
 выполнял бы в потоке.
 
-В главе 16 мы изучали каналы. Каналы отличный способ общения между потоками и
-этот функционал подойдет для решения нашей задачи. Канал работает, как цепочка задач
-и функция `execute` будет отправлять задания из экземпляра `ThreadPool` в `Worker`.
+В главе 16 мы изучали потоки. потоки отличный способ общения между потоками и этой возможности подойдет для решения нашей задачи. Поток работает, как цепочка задач и функция `execute` будет отправлять задания из образца данных `ThreadPool` в `Worker`.
 
-Алгоритм работы:
+Распорядок работы:
 
-1. `ThreadPool` будет создавать канал и будет находиться на стороне отправки.
+1. `ThreadPool` будет создавать поток и будет находиться на стороне отправки.
 2. Каждый `Worker` будет находится на стороне принимающей стороне.
-3. Новая структура `Job` будет содержать замыкание, которое мы хотим отправить в канал.
-4. Метод `execute` структуры `ThreadPool` будет отправлять задание, которые мы хотим отослать.
-5. В потоке, экземпляр `Worker` в цикле получает из канала и выполняет замыкания.
+3. Новая устройства `Job` будет содержать замыкание, которое мы хотим отправить в поток.
+4. Способ `execute` устройства `ThreadPool` будет отправлять задание, которые мы хотим отослать.
+5. В потоке, образец данных `Worker` в круговороте получает из потока и использует замыкания.
 
-Приступим к созданию канала в функции `ThreadPool::new` и содержащуюся на отправляющей
-стороне экземпляр `ThreadPool`, как показано в коде 201-16. `Job` является типом
-данных, который мы будем отправлять в канал. Это код структуры, который пока ничего
+Приступим к созданию потока в функции `ThreadPool::new` и содержащуюся на отправляющей
+стороне образец данных `ThreadPool`, как показано в рукописи 201-16. `Job` является видом
+данных, который мы будем отправлять в поток. Это рукопись устройства, который пока ничего
 не содержит:
 
 <span class="filename">Filename: src/lib.rs</span>
@@ -79,16 +77,15 @@ impl ThreadPool {
 # }
 ```
 
-<span class="caption">код 20-16: изменение `ThreadPool`. Добавление возможности
-хранения отправленной информации в канал, которая отправляет экземпляры `Job`</span>
+<span class="caption">рукопись 20-16: изменение `ThreadPool`. Добавление возможности
+хранения отправленной сведений в поток, которая отправляет образцы `Job`</span>
 
-В функции `ThreadPool::new` мы создаём новый канал и затем отправляем данные. Этот
-код компилируются (хотя и c предупреждениями).
+В функции `ThreadPool::new` мы создаём новый поток и затем отправляем данные. Эта рукопись собираются (хотя и c предупреждениями).
 
-Попробуем передать принимающий конец канала каждому работнику (worker) в время их
-создания. Мы знаем, что хотим использовать принимающий канал в потоке, который
+Попробуем передать принимающий конец потока каждому работнику (worker) в время их
+создания. Мы знаем, что хотим использовать принимающий поток в потоке, который
 появляются у рабочих, поэтому мы будем ссылаться на `receiver` при закрытии.
-Этот код 20-17 пока не будет компилироваться:
+Эта рукопись 20-17 пока не будет собираться:
 
 <span class="filename">Filename: src/lib.rs</span>
 
@@ -130,12 +127,12 @@ impl Worker {
 }
 ```
 
-<span class="caption">код 20-17: Передача принимающего конца канала
-рабочим в экземпляр `Worker`</span>
+<span class="caption">рукопись 20-17: Передача принимающего конца потока
+рабочим в образец данных `Worker`</span>
 
 Это простые и очевидные изменения/
 
-Тестируем. Получаем ошибку компиляции:
+Проверяем. Получаем ошибку сборки:
 
 ```text
 $ cargo check
@@ -151,14 +148,13 @@ error[E0382]: use of moved value: `receiver`
    `std::sync::mpsc::Receiver<Job>`, which does not implement the `Copy` trait
 ```
 
-Т.к. мы пытаемся отправить `receiver` в несколько экземпляров `Worker`. Вспомнив
-материал главы 16, где реализация канала предоставляла множество отправителей
-и одного получателя, мы не можем просто клонировать получающую часть канала для
-решения проблемы.
+Т.к. мы пытаемся отправить `receiver` в несколько образцов `Worker`. Вспомнив
+источник Главы 16, где выполнение потока предоставляла множество отправителей
+и одного получателя, мы не можем просто удваивать получающую часть потока для решения сбоев.
 
 Для решения межпотокового взаимодействия будем использовать умный указатель
-`Arc<Mutex<T>>`. Данный указатель позволяет множеству экземпляров иметь получателя и
-`Mutex` будет отслеживать монопольный доступ к задаче. Код 201-18:
+`Arc<Mutex<T>>`. Данный указатель позволяет множеству образцов иметь получателя и
+`Mutex` будет отслеживать монопольный доступ к задаче. Рукопись 201-18:
 
 <span class="filename">Filename: src/lib.rs</span>
 
@@ -219,13 +215,12 @@ impl Worker {
 }
 ```
 
-<span class="caption">код 20-18: разделение получающую часть канала между экземплярами
-используя `Arc` и `Mutex`</span>
+<span class="caption">рукопись 20-18: разделение получающую часть потока между образцами данных используя `Arc` и `Mutex`</span>
 
-Код будет компилироваться.
+Рукопись будет собираться.
 
-Теперь реализуем метод `execute` в `ThreadPool`. Мы также изменим структуру `Job`.
-Вместо того, чтобы быть структурой - сделаем её псевдонимом сложного типа данных:
+Теперь выполняем способ `execute` в `ThreadPool`. Мы также изменим устройство `Job`.
+Вместо того, чтобы быть устройством - сделаем её псевдонимом сложного вида данных:
 
 <span class="filename">Filename: src/lib.rs</span>
 
@@ -256,13 +251,13 @@ impl ThreadPool {
 // ...snip...
 ```
 
-<span class="caption">код 20-19: создание типа данных `Job`, как `Box`, который
-содержит замыкание, далее отправляем задание в канал</span>
+<span class="caption">рукопись 20-19: создание вида данных `Job`, как `Box`, который
+содержит замыкание, далее отправляем задание в поток</span>
 
-После создания нового экземпляра `Job`, используя метод `execute` мы отправляем
-задание в канал.
+После создания нового образца данных `Job`, используя способ `execute` мы отправляем
+задание в поток.
 
-Далее мы направим задание в `thread::spawn`. Нам нужно использовать бесконечный цикл
+Далее мы направим задание в `thread::spawn`. Нам нужно использовать бесконечный круговорот
 для отслеживания задания внутри:
 
 <span class="filename">Filename: src/lib.rs</span>
@@ -290,15 +285,15 @@ impl Worker {
 }
 ```
 
-<span class="caption">код 20-20: получение и выполнение заданий в цикле, в потоке</span>
+<span class="caption">рукопись 20-20: получение и выполнение заданий в круговороте, в потоке</span>
 
-Здесь мы сначала вызываем `lock` в `receiver` для получения мьютекса, затем
-`unwrap`. Приобретение блокировки может не сработать, если мьютекс находится в
+Здесь мы сначала вызываем `lock` в `receiver` для получения взаимного исключения, затем
+`unwrap`. Приобретение запрета может не сработать, если взаимное исключение находится в
 состояние, называемое *отравленным* (*poisoned*), которое может произойти, если
-какая-то другая нить запаниковала удерживая замок и не освобождает его.
+какая-то другая нить вызвал сбой удерживая замок и не освобождает его.
 
-К сожалению, мы получим ошибку при компиляции этого кода
-Theoretically, this code should compile. Unfortunately, the Rust compiler isn’t
+К сожалению, мы получим ошибку при сборке этой рукописи
+Theoretically, this code should compile. Unfortunately, the Ржавчина compiler isn’t
 perfect yet, and we get this error:
 
 ```text
@@ -311,13 +306,13 @@ statically determined
    |                 ^^^^^^
 ```
 
-Ошибку трудно понять, т.к. проблема сложная.
+Ошибку трудно понять, т.к. неполадка сложная.
 
 This error is fairly cryptic, and that’s because the problem is fairly cryptic.
 In order to call a `FnOnce` closure that is stored in a `Box<T>` (which is what
 our `Job` type alias is), the closure needs to be able to move itself out of
 the `Box<T>` since when we call the closure, it takes ownership of `self`. In
-general, moving a value out of a `Box<T>` isn’t allowed since Rust doesn’t know
+general, moving a value out of a `Box<T>` isn’t allowed since Ржавчина doesn’t know
 how big the value inside the `Box<T>` is going to be; recall in Chapter 15 that
 we used `Box<T>` precisely because we had something of an unknown size that we
 wanted to store in a `Box<T>` to get a value of a known size.
@@ -325,18 +320,18 @@ wanted to store in a `Box<T>` to get a value of a known size.
 We saw in Chapter 17, Listing 17-15 that we can write methods that use the
 syntax `self: Box<Self>` so that the method takes ownership of a `Self` value
 that is stored in a `Box<T>`. That’s what we want to do here, but unfortunately
-the part of Rust that implements what happens when we call a closure isn’t
-implemented using `self: Box<Self>`. So Rust doesn’t yet understand that it
+the part of Ржавчина that implements what happens when we call a closure isn’t
+implemented using `self: Box<Self>`. So Ржавчина doesn’t yet understand that it
 could use `self: Box<Self>` in this situation in order to take ownership of the
 closure and move the closure out of the `Box<T>`.
 
-In the future, the code in Listing 20-20 should work just fine. Rust is still a
+In the future, the code in Listing 20-20 should work just fine. Ржавчина is still a
 work in progress with places that the compiler could be improved. There are
 people just like you working to fix this and other issues! Once you’ve finished
 the book, we would love for you to join in.
 
 But for now, let’s work around this problem. Luckily, there’s a trick that
-involves telling Rust explicitly that we’re in a case where we can take
+involves telling Ржавчина explicitly that we’re in a case where we can take
 ownership of the value inside the `Box<T>` using `self: Box<Self>`, and once we
 have ownership of the closure, we can call it. This involves defining a new
 trait that has a method `call_box` that uses `self: Box<Self>` in its
@@ -381,7 +376,7 @@ impl Worker {
 }
 ```
 
-<span class="caption">код 20-21: добавление типажа `FnBox` для устранения ограничений
+<span class="caption">рукопись 20-21: добавление сущности `FnBox` для устранения ограничений
 `Box<FnOnce()>`</span>
 
 First, we create a new trait named `FnBox`. This trait has one method,
@@ -401,7 +396,7 @@ anything that implements our new trait `FnBox`. This will allow us to use
 about the actual values we’re sending down the channel.
 
 Finally, in the closure run in the thread in `Worker::new`, we use `call_box`
-instead of invoking the closure directly. Now Rust is able to understand that
+instead of invoking the closure directly. Now Ржавчина is able to understand that
 what we want to do is fine.
 
 This is a very sneaky, complicated trick. Don’t worry too much if it doesn’t
